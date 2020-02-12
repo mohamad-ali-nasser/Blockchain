@@ -31,13 +31,18 @@ class Blockchain(object):
         """
 
         block = {
-            # TODO
+            'index': len(self.chain) + 1,
+            'timestamp': time(),
+            'transactions': self.current_transactions,
+            'proof': proof,
+            'previous_hash': previous_hash or self.hash(self.chain[-1]),
         }
 
         # Reset the current list of transactions
-        # Append the chain to the block
-        # Return the new block
-        pass
+        self.current_transactions = []
+        self.chain.append(block)
+        
+        return block
 
     def hash(self, block):
         """
@@ -128,10 +133,15 @@ def mine():
 def full_chain():
     response = {
         # TODO: Return the chain and its current length
+        'chain': blockchain.chain,
+        'length': len(blockchain.chain)
     }
     return jsonify(response), 200
 
 
 # Run the program on port 5000
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # if __name__ == "__main__":
+    # app = create_app()
+    app.run(debug=True)
+    app.run(host='localhost', port=5000)
