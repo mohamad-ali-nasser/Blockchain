@@ -12,7 +12,7 @@ class Blockchain(object):
         self.current_transactions = []
 
         # Create the genesis block
-        self.new_block(previous_hash=1, proof=100)
+        self.new_block(previous_hash="I'm a teapot.", proof=100)
 
     def new_block(self, proof, previous_hash=None):
         """
@@ -40,9 +40,9 @@ class Blockchain(object):
 
         # Reset the current list of transactions
         self.current_transactions = []
-        # Append to chain
+        # Append the block to the chain
         self.chain.append(block)
-        
+        # Return the new block
         return block
 
     def hash(self, block):
@@ -62,15 +62,13 @@ class Blockchain(object):
         # or we'll have inconsistent hashes
 
         # TODO: Create the block_string
-        
         string_object = json.dumps(block, sort_keys=True)
         block_string = string_object.encode()
-        
 
         # TODO: Hash this string using sha256
         raw_hash = hashlib.sha256(block_string)
         hex_hash = raw_hash.hexdigest()
-        
+
         # By itself, the sha256 function returns the hash in a raw string
         # that will likely include escaped characters.
         # This can be hard to read, but .hexdigest() converts the
@@ -92,9 +90,13 @@ class Blockchain(object):
         in an effort to find a number that is a valid proof
         :return: A valid proof for the provided block
         """
-        # TODO
-        pass
-        # return proof
+        
+        block_string = json.dumps(block, sort_keys=True)
+        proof = 0
+        while self.valid_proof(block_string, proof) is False:
+            proof += 1
+
+        return proof
 
     @staticmethod
     def valid_proof(block_string, proof):
@@ -108,9 +110,10 @@ class Blockchain(object):
         correct number of leading zeroes.
         :return: True if the resulting hash is a valid proof, False otherwise
         """
-        # TODO
-        pass
-        # return True or False
+        guess = f'{block_string}{proof}'.encode()
+        guess_hash = hashlib.sha256(guess).hexdigest()
+
+        return guess_hash[:6] == "000000"
 
 
 # Instantiate our Node
@@ -121,16 +124,22 @@ node_identifier = str(uuid4()).replace('-', '')
 
 # Instantiate the Blockchain
 blockchain = Blockchain()
-print(blockchain.hash(blockchain.last_block))
+# print(blockchain.chain)
+# print(blockchain.hash(blockchain.last_block))
+
 
 @app.route('/mine', methods=['GET'])
 def mine():
     # Run the proof of work algorithm to get the next proof
+    proof = blockchain.proof_of_work(blockchain.last_block)
 
     # Forge the new Block by adding it to the chain with the proof
+    previous_hash = blockchain.hash(blockchain.last_block)
+    new_block = blockchain.new_block(proof, previous_hash)
 
     response = {
         # TODO: Send a JSON response with the new block
+        "block": new_block
     }
 
     return jsonify(response), 200
@@ -141,14 +150,11 @@ def full_chain():
     response = {
         # TODO: Return the chain and its current length
         'chain': blockchain.chain,
-        'length': len(blockchain.chain)
+        'length': len(blockchain.chain),
     }
     return jsonify(response), 200
 
 
 # Run the program on port 5000
 if __name__ == '__main__':
-    # if __name__ == "__main__":
-    # app = create_app()
-    app.run(debug=True)
     app.run(host='localhost', port=5000)
