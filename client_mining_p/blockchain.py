@@ -138,10 +138,10 @@ blockchain = Blockchain()
 @app.route('/mine', methods=['POST'])
 def mine():
     # proof request
-    proof_str = request.data.decode("utf-8")
-    proof_json = json.loads(proof_str)
-    proof = int(proof_json.get('proof'))
-    my_id = proof_json.get('id')
+    proof_str = request.data.decode("utf-8") # } these 3 lines can be replaced with
+    proof_json = json.loads(proof_str) # } data = request.get_json()
+    proof = int(proof_json.get('proof')) # } proof = data['proof']
+    my_id = proof_json.get('id') # my_id = data['id']
     # print(proof)
     if blockchain.valid_proof(blockchain.last_block, proof) is False:
         response = {'message': 'Error - Invalid Proof'}
