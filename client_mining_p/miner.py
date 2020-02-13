@@ -18,11 +18,13 @@ def proof_of_work(block):
     """
     block_string = json.dumps(block, sort_keys=True)
     
-    proof = int(random.random())
+    proof = int(random.random())*100000
     
-    while valid_proof(block_string, proof) is False:
+    while valid_proof(block_string, proof)[1] is False:
+        
         proof += 1
-    
+    guess_hash, true = valid_proof(block_string, proof)
+    print(guess_hash)
     return proof
 
 
@@ -37,8 +39,8 @@ def valid_proof(block_string, proof):
     correct number of leading zeroes.
     :return: True if the resulting hash is a valid proof, False otherwise
     """
-    string_object = json.dumps(block_string, sort_keys=True)
-    block_string = f'{string_object}{proof}'.encode()
+    # string_object = json.dumps(block_string, sort_keys=True)
+    block_string = f'{block_string}{proof}'.encode()
 
     # TODO: Hash this string using sha256
     raw_hash = hashlib.sha256(block_string)
@@ -46,8 +48,8 @@ def valid_proof(block_string, proof):
 
 
     # guess_hash = Blockchain().hash(f'{block_string}{proof}')
-
-    return guess_hash[:6] == "000000"
+    
+    return guess_hash, guess_hash[:6] == "000000"
 
 
 if __name__ == '__main__':
@@ -79,7 +81,7 @@ if __name__ == '__main__':
         # new_proof = ???
         print(data)
         new_proof = proof_of_work(data)
-        # print(r)
+        print(f"proof found: {new_proof}")
         # When found, POST it to the server {"proof": new_proof, "id": id}
         post_data = {"proof": new_proof, "id": id}
         print(post_data)

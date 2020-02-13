@@ -102,22 +102,25 @@ class Blockchain(object):
 
     #     return proof
 
-    # @staticmethod
-    # def valid_proof(block_string, proof):
-    #     """
-    #     Validates the Proof:  Does hash(block_string, proof) contain 3
-    #     leading zeroes?  Return true if the proof is valid
-    #     :param block_string: <string> The stringified block to use to
-    #     check in combination with `proof`
-    #     :param proof: <int?> The value that when combined with the
-    #     stringified previous block results in a hash that has the
-    #     correct number of leading zeroes.
-    #     :return: True if the resulting hash is a valid proof, False otherwise
-    #     """
-    #     guess = f'{block_string}{proof}'.encode()
-    #     guess_hash = hashlib.sha256(guess).hexdigest()
-
-    #     return guess_hash[:6] == "000000"
+    @staticmethod
+    def valid_proof(block_string, proof):
+        """
+        Validates the Proof:  Does hash(block_string, proof) contain 3
+        leading zeroes?  Return true if the proof is valid
+        :param block_string: <string> The stringified block to use to
+        check in combination with `proof`
+        :param proof: <int?> The value that when combined with the
+        stringified previous block results in a hash that has the
+        correct number of leading zeroes.
+        :return: True if the resulting hash is a valid proof, False otherwise
+        """
+        block_string = json.dumps(block_string, sort_keys=True)
+        print(block_string)
+        guess = f'{block_string}{proof}'.encode()
+        print(proof)
+        guess_hash = hashlib.sha256(guess).hexdigest()
+        print(guess_hash)
+        return guess_hash[:6] == "000000"
 
 
 # Instantiate our Node
@@ -139,7 +142,10 @@ def mine():
     proof_json = json.loads(proof_str)
     proof = int(proof_json.get('proof'))
     my_id = proof_json.get('id')
-    
+    # print(proof)
+    if blockchain.valid_proof(blockchain.last_block, proof) is False:
+        response = {'message': 'Error - Invalid Proof'}
+        return jsonify(response), 200
     
     # Forge the new Block by adding it to the chain with the proof
     previous_hash = blockchain.hash(blockchain.last_block)
@@ -147,10 +153,10 @@ def mine():
 
     response = {
         # TODO: Send a JSON response with the new block
-        "id": my_id,
-        "proof": proof,
-        "block": new_block,
-        "message": "New Block Forged",
+        'id': my_id,
+        'proof': proof,
+        'block': new_block,
+        'message': 'New Block Forged',
     }
 
     return jsonify(response), 200
