@@ -5,7 +5,7 @@ import sys
 import json
 import random
 
-from Blockchain
+# from blockchain import Blockchain
 
 
 def proof_of_work(block):
@@ -37,8 +37,15 @@ def valid_proof(block_string, proof):
     correct number of leading zeroes.
     :return: True if the resulting hash is a valid proof, False otherwise
     """
+    string_object = json.dumps(block_string, sort_keys=True)
+    block_string = f'{string_object}{proof}'.encode()
 
-    guess_hash = Blockchain.hash(f'{block_string}{proof}')
+    # TODO: Hash this string using sha256
+    raw_hash = hashlib.sha256(block_string)
+    guess_hash = raw_hash.hexdigest()
+
+
+    # guess_hash = Blockchain().hash(f'{block_string}{proof}')
 
     return guess_hash[:6] == "000000"
 
@@ -70,23 +77,23 @@ if __name__ == '__main__':
 
         # TODO: Get the block from `data` and use it to look for a new proof
         # new_proof = ???
-        
+        print(data)
         new_proof = proof_of_work(data)
-        
+        # print(r)
         # When found, POST it to the server {"proof": new_proof, "id": id}
         post_data = {"proof": new_proof, "id": id}
-
+        print(post_data)
         r = requests.post(url=node + "/mine", json=post_data)
         data = r.json()
         
         try:
             data = r.json()
             if data['message'] == "New Block Forged":
-                coine += 1
-                print(data['message']+" +1 coins"+f" Total coins:{coin})"
-            
+                coin += 1
+                print(data['message']+" +1 minted coin"+f" Total coins:{coin})")
             else:
                 print(data['message'])
+                
         except ValueError:
             print("Error:  Non-json response")
             print("Response returned:")

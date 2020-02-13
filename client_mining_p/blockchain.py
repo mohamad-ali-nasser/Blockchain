@@ -34,6 +34,7 @@ class Blockchain(object):
         """
 
         block = {
+            # 'id': id,
             'index': len(self.chain) + 1,
             'timestamp': time(),
             'transactions': self.current_transactions,
@@ -134,14 +135,20 @@ blockchain = Blockchain()
 @app.route('/mine', methods=['POST'])
 def mine():
     # proof request
-    proof = blockchain.proof_of_work(blockchain.last_block)
-
+    proof_str = request.data.decode("utf-8")
+    proof_json = json.loads(proof_str)
+    proof = int(proof_json.get('proof'))
+    my_id = proof_json.get('id')
+    
+    
     # Forge the new Block by adding it to the chain with the proof
     previous_hash = blockchain.hash(blockchain.last_block)
     new_block = blockchain.new_block(proof, previous_hash)
 
     response = {
         # TODO: Send a JSON response with the new block
+        "id": my_id,
+        "proof": proof,
         "block": new_block,
         "message": "New Block Forged",
     }
