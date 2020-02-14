@@ -8,7 +8,7 @@ import json
 from time import time
 from uuid import uuid4
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 
 
 class Blockchain(object):
@@ -41,7 +41,7 @@ class Blockchain(object):
             'timestamp': time(),
             'transactions': self.current_transactions,
             'proof': proof,
-            'previous_hash': self.hash(self.chain[-1]) or previous_hash,
+            'previous_hash': previous_hash or self.hash(self.chain[-1]),
         }
 
         # Reset the current list of transactions
@@ -67,6 +67,18 @@ class Blockchain(object):
         self.current_transactions.append(transaction)
         
         return self.last_block['index'] + 1
+    
+    def change_user(self, user, new_user)
+    
+        for i self.chain:
+            for j in i['transactions']:
+
+                if j['recipient'] == user:
+                    transaction_history.append(str(j['sender'])+": " + str(j['amount']))
+                    balance += j['amount']
+                if j['sender'] == user:
+                    transaction_history.append(str(j['recipient'])+": " + str(-j['amount']))
+                    balance -= j['amount']
 
     def hash(self, block):
         """
@@ -139,7 +151,7 @@ class Blockchain(object):
         print(proof)
         guess_hash = hashlib.sha256(guess).hexdigest()
         print(guess_hash)
-        return guess_hash[:6] == "000000"
+        return guess_hash[:3] == "000"
 
 
 # Instantiate our Node
@@ -152,7 +164,65 @@ node_identifier = str(uuid4()).replace('-', '')
 blockchain = Blockchain()
 # print(blockchain.chain)
 # print(blockchain.hash(blockchain.last_block))
-@app.route('transaction/new', method=['POST'])
+@app.route('/')
+def user():
+    
+    return  render_template('base.html', title='Home', wallet="TEST",transaction_history=""), 200  
+    
+@app.route('/', methods=['POST'])
+def wallet():
+    user = request.form["user"]
+
+    transaction_history = []
+    balance = 0
+    for i in blockchain.chain:
+        if len(i['transactions']) == 0:
+            continue
+
+        for j in i['transactions']:
+
+            if j['recipient'] == user:
+                transaction_history.append(str(j['sender'])+": " + str(j['amount']))
+                balance += j['amount']
+            if j['sender'] == user:
+                transaction_history.append(str(j['recipient'])+": " + str(-j['amount']))
+                balance -= j['amount']
+
+    return render_template('base.html', title='Home', wallet=balance,
+                            transaction_history=transaction_history), 200
+    
+@app.route('/changed', methods=['POST'])
+def change():
+    return  render_template('change.html', title='Home', wallet="TEST",transaction_history=""), 200
+
+@app.route('/changed', methods=['POST'])
+def wallet():
+    user = request.form["user"]
+    new_user = request.form["new_user"]
+
+    for i in blockchain.chain:
+        if len(i['transactions']) == 0:
+            continue
+        print("i: ")
+        print(i)    # return render_template('base.html', title='Home', wallet="TEST2"), 200
+        for j in i['transactions']:
+            print("j: ")
+            print(j)
+            if j['recipient'] == user:
+                transaction_history.append(str(j['sender'])+": " + str(j['amount']))
+                balance += j['amount']
+            if j['sender'] == user:
+                transaction_history.append(str(j['recipient'])+": " + str(-j['amount']))
+                balance -= j['amount']
+    # balance = received + sent
+    
+    # response = {'balance': balance}
+    # get_tweets(tname)
+    return render_template('base.html', title='Home', wallet=balance,
+                            transaction_history=transaction_history), 200
+    
+
+@app.route('/transaction/new', methods=['POST'])
 def receive_new_transaction():
     
     data = request.get_json()
@@ -177,7 +247,7 @@ def mine():
     proof_str = request.data.decode("utf-8") # } these 3 lines can be replaced with
     proof_json = json.loads(proof_str) # } data = request.get_json()
     proof = int(proof_json.get('proof')) # } proof = data['proof']
-    my_id = proof_json.get('id') # my_id = data['id']
+    my_id = data['id']
     # print(proof)
     if blockchain.valid_proof(blockchain.last_block, proof) is False:
         response = {'message': 'Error - Invalid Proof'}
@@ -186,12 +256,13 @@ def mine():
     # Forge the new Block by adding it to the chain with the proof
     previous_hash = blockchain.hash(blockchain.last_block)
     
-    block_index = blockchain.new_transaction("0", my_id, amount)
+    block_index = blockchain.new_transaction("0", my_id, 1)
     
     new_block = blockchain.new_block(proof, previous_hash)
 
     response = {
         # TODO: Send a JSON response with the new block
+        'index': block_index,
         'id': my_id,
         'proof': proof,
         'block': new_block,

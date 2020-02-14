@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Welcom to your Coin Wallet - {{ title }}</title>
+		<!-- CSS, keywords, meta goes here -->
+	</head>
+
+
+	<body>
+		<h1>Let's check your coins!</h1>
+		<p>Input your name below</p>
+
+		<form method="POST" action="/">
+			<input type="text" name="user" required><br>
+			<input type="submit" value="Submit">
+		</form>
+		<p>Your total is
+			{{ wallet }}
+		</p>
+
+		<ul>
+			{% for w in transaction_history %}
+			<li> {{ w }}</li>
+			{% endfor %}
+		</ul>
+	</body>
+
+
+
+</html>
