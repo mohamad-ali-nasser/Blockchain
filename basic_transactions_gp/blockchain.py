@@ -15,6 +15,7 @@ class Blockchain(object):
     def __init__(self):
         self.chain = []
         self.current_transactions = []
+        self.users = []
 
         # Create the genesis block
         self.new_block(previous_hash="1", proof=100)
@@ -68,10 +69,12 @@ class Blockchain(object):
         
         return self.last_block['index'] + 1
     
-    def change_user(self, user, new_user):
+    def change_user(self, user, new_user=None):
         
         counter = 0
-        
+        if new_user is None:
+            return None
+            
         for i in self.chain:
             
             for j in i['transactions']:
@@ -83,8 +86,26 @@ class Blockchain(object):
                 if j['sender'] == user:
                     j['sender'] = new_user
                     counter+=1
+        if user in self.users:
+            self.users.remove(user)
+            
+        self.save_user(new_user)
         
         return counter
+    
+    def save_user(self, new_user):
+        
+        if new_user in self.users:
+            pass
+        
+        else:
+            self.users.append(new_user)
+
+        with open('ids.txt', "w") as f:
+            for L in self.users:
+                f.writelines(L+"\n")
+
+
 
     def hash(self, block):
         """
@@ -168,6 +189,7 @@ node_identifier = str(uuid4()).replace('-', '')
 
 # Instantiate the Blockchain
 blockchain = Blockchain()
+print(blockchain.save_user('SOMETHING'))
 # print(blockchain.chain)
 # print(blockchain.hash(blockchain.last_block))
 @app.route('/')
@@ -207,6 +229,11 @@ def changed():
     user = request.form["user"]
     new_user = request.form["new_user"]
     message = blockchain.change_user(user, new_user)
+    
+    if message is None:
+        return render_template('change.html', title='Home', 
+                           change_message="No New User Filled"), 200
+    
     if message == 0:
         change_message = "This name is not registered"
     else:
@@ -224,7 +251,8 @@ def receive_new_transaction():
     if not all(k in data for k in required):
         response = {'message': "missing values"}
         return jsonify(response), 400
-    
+    blockchain.save_user(data['sender'])
+    blockchain.save_user(data['recipient'])
     index = blockchain.new_transaction(data['sender'],
                                        data['recipient'],
                                        data['amount'])
@@ -253,7 +281,7 @@ def mine():
     block_index = blockchain.new_transaction("0", my_id, 1)
     
     new_block = blockchain.new_block(proof, previous_hash)
-
+    blockchain.save_user(my_id)
     response = {
         # TODO: Send a JSON response with the new block
         'index': block_index,
