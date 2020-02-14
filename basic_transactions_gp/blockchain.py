@@ -68,17 +68,23 @@ class Blockchain(object):
         
         return self.last_block['index'] + 1
     
-    def change_user(self, user, new_user)
-    
-        for i self.chain:
+    def change_user(self, user, new_user):
+        
+        counter = 0
+        
+        for i in self.chain:
+            
             for j in i['transactions']:
 
                 if j['recipient'] == user:
-                    transaction_history.append(str(j['sender'])+": " + str(j['amount']))
-                    balance += j['amount']
+                    j['recipient'] = new_user
+                    counter+=1
+                    
                 if j['sender'] == user:
-                    transaction_history.append(str(j['recipient'])+": " + str(-j['amount']))
-                    balance -= j['amount']
+                    j['sender'] = new_user
+                    counter+=1
+        
+        return counter
 
     def hash(self, block):
         """
@@ -191,35 +197,23 @@ def wallet():
     return render_template('base.html', title='Home', wallet=balance,
                             transaction_history=transaction_history), 200
     
-@app.route('/changed', methods=['POST'])
+@app.route('/changed')
 def change():
-    return  render_template('change.html', title='Home', wallet="TEST",transaction_history=""), 200
+    return  render_template('change.html', title='Home',change_message=""), 200
 
 @app.route('/changed', methods=['POST'])
-def wallet():
+def changed():
+    
     user = request.form["user"]
     new_user = request.form["new_user"]
+    message = blockchain.change_user(user, new_user)
+    if message == 0:
+        change_message = "This name is not registered"
+    else:
+        change_message = f'Hooray! You name has been changed in {message} different instances'
 
-    for i in blockchain.chain:
-        if len(i['transactions']) == 0:
-            continue
-        print("i: ")
-        print(i)    # return render_template('base.html', title='Home', wallet="TEST2"), 200
-        for j in i['transactions']:
-            print("j: ")
-            print(j)
-            if j['recipient'] == user:
-                transaction_history.append(str(j['sender'])+": " + str(j['amount']))
-                balance += j['amount']
-            if j['sender'] == user:
-                transaction_history.append(str(j['recipient'])+": " + str(-j['amount']))
-                balance -= j['amount']
-    # balance = received + sent
-    
-    # response = {'balance': balance}
-    # get_tweets(tname)
-    return render_template('base.html', title='Home', wallet=balance,
-                            transaction_history=transaction_history), 200
+    return render_template('change.html', title='Home', 
+                           change_message=change_message), 200
     
 
 @app.route('/transaction/new', methods=['POST'])
@@ -247,7 +241,7 @@ def mine():
     proof_str = request.data.decode("utf-8") # } these 3 lines can be replaced with
     proof_json = json.loads(proof_str) # } data = request.get_json()
     proof = int(proof_json.get('proof')) # } proof = data['proof']
-    my_id = data['id']
+    my_id = proof_json.get('id')
     # print(proof)
     if blockchain.valid_proof(blockchain.last_block, proof) is False:
         response = {'message': 'Error - Invalid Proof'}
